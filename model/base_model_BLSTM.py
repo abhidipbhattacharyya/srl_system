@@ -28,6 +28,12 @@ class lstm_crf(nn.Module):
         if CUDA:
             self = self.cuda()
 
+    def train_start(self):
+        self.lstm.train()
+
+    def val_start(self):
+        self.lstm.eval()
+
     def forward(self, x,f, y0): # for training
         mask = x.data.gt(0).float()
         y = self.lstm(x,f, mask)

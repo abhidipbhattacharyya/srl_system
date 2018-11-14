@@ -28,10 +28,13 @@ EOS_IDX = 1
 SOS_IDX = 2
 UNK_IDX = 3
 CUDA = torch.cuda.is_available()
-LR_G = 0.0002
+LR_G = 0.002
 LR_D = 0.0002
 
+CRF_READ_GAN = 'trained_model/model.epoch20'
 TRAINDED_MODEL_PATH = 'trained_model'
 WORD_2_IDX_PATH = 'trained_model/word_2_idx.txt'
 NUM_EPCH = 20
+GEN_ITR = 10
+CRITIC_ITR = 5
 TAG_2_IDX_PATH = 'trained_model/tag_2_idx.txt'

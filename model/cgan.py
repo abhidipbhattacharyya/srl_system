@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from configuration.config import *
 import torch.nn.functional as F
+import copy
 
 torch.manual_seed(1)
 CUDA = torch.cuda.is_available()
@@ -9,12 +10,12 @@ CUDA = torch.cuda.is_available()
 
 
 class lstm_crf_gan(nn.Module):
-    def __init__(self, vocab_size, num_tags, pretrained = False, pretrained_weight= None):#embed_size, hidden_size, num_dir, num_layers, bidirectional, dropout,
+    def __init__(self, vocab_size, num_tags, pretrained = False, pretrained_weight= None, tdic =None):#embed_size, hidden_size, num_dir, num_layers, bidirectional, dropout,
         super().__init__()
 
         # architecture
         self.lstm = lstm(vocab_size, num_tags, pretrained, pretrained_weight)
-        self.crf = crf_gan(num_tags)
+        self.crf = crf_gan(num_tags, tdic)
 
         if CUDA:
             self = self.cuda()
@@ -22,13 +23,15 @@ class lstm_crf_gan(nn.Module):
     def set_crf(self, crf):
         if CUDA:
             crf = crf.cuda()
-        self.crf = crf
+        self.crf = copy.deepcopy(crf)
 
     def forward(self, x, f, tags, y0): # for training
         mask = x.data.gt(0).float()
         y = self.lstm(x,f, tags, mask)
         Z = self.crf.forward(y, mask)
         score = self.crf.score(y, y0, mask)
+        err = Z - score
+        #print('err = {}, shape = {}'.format(err, err.shape))
         return Z - score # NLL loss
 
     def decode(self, x, f,tags): # for prediction
@@ -98,25 +101,34 @@ class lstm(nn.Module):
         embed = nn.utils.rnn.pack_padded_sequence(embed, mask.sum(1).int(), batch_first = True)
         h, _ = self.lstm(embed, self.hidden)
         h, _ = nn.utils.rnn.pad_packed_sequence(h, batch_first = True)
-
+        #print('shape of lstm-feature: {}  '.format(h.shape))
         y = self.out(h)
 
         y *= mask.unsqueeze(-1).expand_as(y)
         return y
 
 class crf_gan(nn.Module):
-    def __init__(self, num_tags):
+    def __init__(self, num_tags, tdic = None):
         super().__init__()
         self.num_tags = num_tags
 
         # matrix of transition scores from j to i
         self.trans = nn.Parameter(randn(num_tags, num_tags))
+        if tdic:
+            for i in range(num_tags):
+                for j in range(num_tags):
+                    dest_tag = tdic.getTag(i)
+                    src_tag =  tdic.getTag(j)
+                    if i != j and dest_tag[0] == 'I' and not src_tag == 'B' + dest_tag[1:]:
+                        self.trans.data[i, j] = -10000.
+
         self.trans.data[SOS_IDX, :] = -10000. # no transition to SOS
         self.trans.data[:, EOS_IDX] = -10000. # no transition from EOS except to PAD
         self.trans.data[:, PAD_IDX] = -10000. # no transition from PAD except to PAD
         self.trans.data[PAD_IDX, :] = -10000. # no transition to PAD except from EOS
         self.trans.data[PAD_IDX, EOS_IDX] = 0.
         self.trans.data[PAD_IDX, PAD_IDX] = 0.
+
 
     def forward(self, y, mask): # forward algorithm
         # initialize forward variables in log space
@@ -132,6 +144,7 @@ class crf_gan(nn.Module):
             score_t = log_sum_exp(score_t + emit + trans)
             score = score_t * mask_t + score * (1 - mask_t)
         score = log_sum_exp(score)
+        #print('sc1 size{}'.format(score.shape))
         return score # partition function
 
     def score(self, y, y0, mask): # calculate the score of a given sequence
@@ -143,6 +156,7 @@ class crf_gan(nn.Module):
             emit = torch.cat([y[b, t, y0[b, t + 1]].unsqueeze(0) for b in range(batch_size_this)])
             trans = torch.cat([self.trans[seq[t + 1], seq[t]].unsqueeze(0) for seq in y0]) * mask_t
             score = score + emit + trans
+        #print('sc2 size{}'.format(score.shape))
         return score
 
     def decode(self, y, mask): # Viterbi decoding
@@ -179,9 +193,9 @@ class crf_gan(nn.Module):
         return best_path
 
 class Generator(nn.Module):
-    def __init__(self,vocab_size, num_tags, pretrained = False, pretrained_weight= None):
+    def __init__(self,vocab_size, num_tags, pretrained = False, pretrained_weight= None,tdic =None):
         super(Generator, self).__init__()
-        self.model = lstm_crf_gan(vocab_size, num_tags, pretrained , pretrained_weight)
+        self.model = lstm_crf_gan(vocab_size, num_tags, pretrained , pretrained_weight, tdic)
         if CUDA:
             self = self.cuda()
 
@@ -189,8 +203,17 @@ class Generator(nn.Module):
         self.model.set_crf(crf)
 
     def forward(self, x, f, tags, y0):
+        return self.model(x, f, tags, y0)
+
+    def decode(self, x, f, tags):
         y_p = self.model.decode(x, f, tags)
         return y_p
+
+    def train_start(self):
+        self.model.train()
+
+    def eval_start(self):
+        self.lstm_crf_gan.eval()
 
 class Discriminator(nn.Module):
     def __init__(self, vocab_size, num_tags, pretrained = False, pretrained_weight =None):
@@ -234,7 +257,8 @@ class Discriminator(nn.Module):
             nn.Linear(256, 32),
             nn.Dropout(0.4),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(32, 1)
+            nn.Linear(32, 1),
+            nn.Sigmoid(),
         )
         if CUDA:
             self = self.cuda()
@@ -285,14 +309,47 @@ class myLoss(nn.Module):
             self = self.cuda()
 
     def forward(self, sc_actual, sc_gen, sc_wrong):
-        mask = torch.eye(sc_wrong.size(0)) > .5
+        mask = eye(sc_wrong.size(0)) > .5
         sc_wrong = sc_wrong.masked_fill_(mask, 0)
-        #print(sc_wrong);
+        #print(sc_gen);
         sc_wrong = sc_wrong.max(1)[0]
         #print(sc_wrong);
-        D_loss = - torch.mean(torch.log(sc_actual) + (torch.log(1. - sc_wrong) + torch.log(1. - sc_gen))/2)
-        G_loss = torch.mean(torch.log(1. - sc_gen))
+        D_loss = torch.mean(torch.log(sc_actual) + (torch.log(1. - sc_wrong) + torch.log(1. - sc_gen))/2)
+        G_loss = torch.mean(torch.log( sc_gen))
         return G_loss, D_loss
+
+
+class rd_optimizer():
+    def __init__(self, parameters, lr, dstep=25, drate = 0.1):
+        self.optimizer = torch.optim.Adam(parameters, lr=lr)
+        self._step = 0
+        self._rate = lr
+        self.dstep = dstep
+        self.drate = drate
+
+    def step(self):
+        "Update parameters and rate"
+        self._step += 1
+        rate = self.rate()
+        for p in self.optimizer.param_groups:
+            p['lr'] = rate
+        self._rate = rate
+        self.optimizer.step()
+
+    def rate(self, step = None):
+        "Implement `lrate` above"
+        if self._step % self.dstep == 0:
+            return self._rate * self.drate
+        return self._rate
+
+    def zero_grad(self):
+        self.optimizer.zero_grad()
+
+    def learning_rate(self):
+        for p in self.optimizer.param_groups:
+            return p['lr']
+
+
 
 def Tensor(*args):
     x = torch.Tensor(*args)
@@ -310,8 +367,16 @@ def zeros(*args):
     x = torch.zeros(*args)
     return x.cuda() if CUDA else x
 
+def ones(*args):
+    x = torch.ones(*args)
+    return x.cuda() if CUDA else x
+
 def cat(*args):
     x = torch.cat(*args)
+    return x.cuda() if CUDA else x
+
+def eye(*args):
+    x = torch.eye(*args)
     return x.cuda() if CUDA else x
 
 def scalar(x):

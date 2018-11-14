@@ -1,0 +1,135 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[detached (from session training_RLSTM)]
+abhidip@ego:~$ tmux a -t training_RLSTM
+[detached (from session training_RLSTM)]
+abhidip@ego:~$ packet_write_wait: Connection to 128.138.201.94 port 22: Broken pipe
+rgnt1-51-108-dhcp:code abhipubali$ ssh chenhao_GPU
+no such identity: /Users/abhipubali/.ssh/id_rsa: No such file or directory
+abhidip@ego.cs.colorado.edu's password: 
+Welcome to Ubuntu 16.04.3 LTS (GNU/Linux 4.4.0-96-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+New release '18.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Tue Nov 13 10:10:45 2018 from 10.202.50.253
+abhidip@ego:~$ tmux a -t training_RLSTM
+[detached (from session training_RLSTM)]
+abhidip@ego:~$ tmux a -t training_RLSTM
+[detached (from session training_RLSTM)]
+abhidip@ego:~$ packet_write_wait: Connection to 128.138.201.94 port 22: Broken pipe
+rgnt1-51-108-dhcp:code abhipubali$ ssh chenhao_GPU
+no such identity: /Users/abhipubali/.ssh/id_rsa: No such file or directory
+abhidip@ego.cs.colorado.edu's password: 
+Welcome to Ubuntu 16.04.3 LTS (GNU/Linux 4.4.0-96-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+New release '18.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Tue Nov 13 22:03:59 2018 from 73.217.123.122
+abhidip@ego:~$ tmux a -t training_RLSTM
+[detached (from session training_RLSTM)]
+abhidip@ego:~$ tmux a -t training_RLSTM
+
+generator loss 4.999082496933553
+@generator epoch25
+generator loss 4.929852161599301
+@generator epoch26
+generator loss 4.8714544793655135
+@generator epoch27
+generator loss 4.843465040744036
+@generator epoch28
+generator loss 4.818745976754989
+@generator epoch29
+generator loss 4.737533745683472
+@generator epoch30
+generator loss 4.703901396537649
+@generator epoch31
+generator loss 4.673778853882318
+@generator epoch32
+generator loss 4.597989385703515
+@generator epoch33
+generator loss 4.570283135600474
+@generator epoch34
+generator loss 4.5284721203234
+@generator epoch35
+generator loss 4.473891275778584
+@generator epoch36
+generator loss 4.469641708779609
+@generator epoch37
+generator loss 4.405798178568654
+@generator epoch38
+generator loss 4.3821292819647955
+@generator epoch39
+generator loss 4.385838873084935
+@generator epoch40
+generator loss 4.348242914950711
+@generator epoch41
+generator loss 4.301287310013826
+@generator epoch42
+generator loss 4.294255467666977
+@generator epoch43
+generator loss 4.238575066917244
+@generator epoch44
+generator loss 4.218535909570496
+@generator epoch45
+generator loss 4.191552178750093
+@generator epoch46
+generator loss 4.163987280034471
+@generator epoch47
+generator loss 4.129139757841483
+@generator epoch48
+generator loss 4.094261497327651
+@generator epoch49
+generator loss 4.0877510912116914
+epoch = 50, loss = 4.087751, time = 1542168852.754301
+saving model...
+saved model at epoch 50
+@epoch==1
+@disc epoch0
+discriminator loss 1.3917193082557326
+@disc epoch1

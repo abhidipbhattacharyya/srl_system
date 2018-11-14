@@ -50,6 +50,7 @@ class WordDictionary:
                     #self.weights.append(np.random.normal(0, 0.1, self.dim ))
 
             else:
+                print('word embedding none')
                 self.idx2word[len(self.word2idx)] = word #order matters
                 self.word2idx[word] = len(self.word2idx)
 

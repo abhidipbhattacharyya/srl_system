@@ -88,3 +88,21 @@ def save_tag_to_idx(fname,tdic):
     for tag, _ in sorted(tag_to_idx.items(), key = lambda x: x[1]):
         fo.write("%s\n" % tag)
     fo.close()
+
+def freeze_net(net):
+    for p in net.parameters():
+        p.requires_grad = False
+
+
+def unfreeze_net(net):
+    for p in net.parameters():
+        p.requires_grad = True
+
+def reduce_data(batched_data, prob =0.5):
+    selected_data =[]
+    for i in range(len(batched_data)):
+        data = batched_data[i]
+        chance = np.random.uniform(0,1)
+        if chance >= prob:
+            data.append(data)
+    return selected_data

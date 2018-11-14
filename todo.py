@@ -8,7 +8,6 @@
 ## character CNN/RNN- read from elmo -1 and gung thesis
 ## Ask John for list of LSTM issue
 
-
 ## GAN
 ## create the stat class that will have normalised proba
 ## of having word-tag prob. P(tag|word). Using this generate a tag sequence.
@@ -26,8 +25,8 @@
 ## generate the noise from the base model. done
 ## take hard negative sampling from vse++ paper: https://github.com/fartashf/vsepp
 
-
 ## python@chenhao_GPU:
 #source activate abhipython
 #watch -n 2 nvidia-smi
+#ps aux|grep abhidip
 # python predict.py /data/abhidip/srl/conll05.devel.txt /data/abhidip/srl/conll05.devel.props.gold.txt  trained_model/model.epoch400
